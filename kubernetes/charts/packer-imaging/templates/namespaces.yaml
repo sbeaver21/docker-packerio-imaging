@@ -18,5 +18,11 @@ metadata:
   name: {{ .Values.namespaces.frontend }}
   labels:
     {{- include "packer-imaging.labels" . | nindent 4 }}
-    pod-security.kubernetes.io/enforce: baseline
+    # Warn, not enforce. The front end publishes on the node's port 80 through
+    # `hostPort`, which the baseline profile forbids. Enforcing baseline here
+    # stops the very Deployment this namespace exists for: the ReplicaSet loops
+    # on "violates PodSecurity: hostPort" and no pod is ever created. Warning
+    # keeps it visible without blocking. The build namespace above keeps
+    # `baseline` enforced, because those pods do comply.
+    pod-security.kubernetes.io/warn: baseline
 {{- end }}
