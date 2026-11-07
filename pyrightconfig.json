@@ -1,0 +1,11 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "web/tools",
+      "extraPaths": [
+        "web",
+        "web/tests"
+      ]
+    }
+  ]
+}

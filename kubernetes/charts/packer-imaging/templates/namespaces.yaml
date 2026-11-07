@@ -1,0 +1,22 @@
+{{- if .Values.namespaces.create }}
+# Two namespaces: the builds, and the web front end that reads them. The front
+# end's RBAC into the builds namespace is granted by
+# kubernetes/workloads/web-frontend.yaml, which must be applied after this.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.builds }}
+  labels:
+    {{- include "packer-imaging.labels" . | nindent 4 }}
+    # Enforce the LimitRange default on pods that declare no resources of their
+    # own, so a hand-started Job cannot bypass the quota by omitting limits.
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.frontend }}
+  labels:
+    {{- include "packer-imaging.labels" . | nindent 4 }}
+    pod-security.kubernetes.io/enforce: baseline
+{{- end }}

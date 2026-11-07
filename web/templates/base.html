@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{ page_title }} &middot; Image Builder &middot; {{ namespace }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232462e0'/><path d='M9 11h14M9 16h14M9 21h9' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>">
+  <script>
+    /* Resolve the theme before the first paint. Inline and in the head on
+       purpose: doing this from a script at the end of the body means one frame
+       of the wrong theme on every load, which is the flicker people notice.
+
+       The stored preference is "auto", "light" or "dark"; "auto" follows the
+       operating system. The resolved value goes to data-theme, which is what
+       the stylesheet keys off, and the raw preference to data-theme-mode, which
+       is what the toggle's label reflects. */
+    (function () {
+      var stored = null;
+      try { stored = window.localStorage.getItem('aria-image-builder-theme'); } catch (e) { stored = null; }
+      var mode = (stored === 'light' || stored === 'dark') ? stored : 'auto';
+
+      /* ?theme=dark or ?theme=light forces one theme for this page view
+         without writing the preference, so a screenshot or a link to the
+         terminal view is reproducible without touching the browser. */
+      var forced = null;
+      try { forced = new URLSearchParams(window.location.search).get('theme'); } catch (e) { forced = null; }
+      if (forced === 'dark' || forced === 'light' || forced === 'auto') mode = forced;
+
+      var prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var dark = mode === 'dark' || (mode === 'auto' && prefersDark);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme-mode', mode);
+    })();
+  </script>
+</head>
+<body data-page="{{ page }}"
+      data-refresh-seconds="{{ refresh_seconds }}"
+      data-can-mutate="{{ 'true' if can_mutate else 'false' }}"
+      data-log-tail="{{ log_tail }}">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a class="brand-link" href="/">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h10"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-title">Image Builder</span>
+        <span class="brand-sub">Packer image builds &middot; namespace <code>{{ namespace }}</code></span>
+      </span>
+    </a>
+  </div>
+
+  <nav class="mainnav" aria-label="Sections">
+    <a href="/"{% if page == "landing" %} aria-current="page"{% endif %}>Overview</a>
+    <a href="/build"{% if page == "build" %} aria-current="page"{% endif %}>Build</a>
+    <a href="/runs"{% if page == "runs" %} aria-current="page"{% endif %}>Runs</a>
+  </nav>
+
+  <div class="topbar-actions">
+    {% if not can_mutate %}
+      <span class="badge badge-readonly" title="READ_ONLY is set: viewing only">
+        read-only
+      </span>
+    {% endif %}
+    <span class="conn" id="connection" data-state="unknown" role="status" aria-live="polite">
+      <span class="conn-dot" aria-hidden="true"></span>
+      <span class="conn-text">connecting</span>
+    </span>
+
+    <!-- Theme ----------------------------------------------------------
+         Cycles auto -> dark -> light -> auto. The icons are swapped by
+         core.js; this one is the "auto" state, which is what a fresh browser
+         gets.
+    ------------------------------------------------------------------ -->
+    <button type="button" class="btn btn-quiet btn-icon" id="theme-button"
+            data-mode="auto" title="Theme: follow the system" aria-label="Theme: follow the system">
+      <svg class="theme-icon theme-icon-auto" viewBox="0 0 24 24" width="16" height="16"
+           fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+           aria-hidden="true">
+        <circle cx="12" cy="12" r="8.2"/>
+        <path d="M12 3.8v16.4" />
+        <path d="M12 3.8a8.2 8.2 0 0 1 0 16.4z" fill="currentColor" stroke="none"/>
+      </svg>
+      <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" width="16" height="16"
+           fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+           aria-hidden="true" hidden>
+        <path d="M20 14.2A8.4 8.4 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2z"/>
+      </svg>
+      <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" width="16" height="16"
+           fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+           aria-hidden="true" hidden>
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/>
+      </svg>
+    </button>
+
+    <button type="button" class="btn btn-quiet" id="refresh-button">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+  <div class="banner" id="banner" hidden role="alert">
+    <span class="banner-text" id="banner-text"></span>
+    <button type="button" class="banner-close" id="banner-close" aria-label="Dismiss">&times;</button>
+  </div>
+
+  {% block content %}{% endblock %}
+
+</main>
+
+<footer class="page-foot">
+  <p>
+    <span id="foot-namespace">{{ namespace }}</span>
+    &middot; every <span id="foot-refresh">{{ refresh_seconds }}</span>s
+    &middot; <span id="foot-updated">never</span>
+  </p>
+</footer>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script src="{{ url_for('static', filename='core.js') }}" defer></script>
+<script src="{{ url_for('static', filename=page_script) }}" defer></script>
+</body>
+</html>

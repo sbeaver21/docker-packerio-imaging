@@ -1,0 +1,5 @@
+# Test output, and the Packer plugin cache the tests build with `packer init`.
+# The cache holds platform-specific plugin binaries - tens of megabytes of
+# vendor downloads that must never be committed.
+output
+temp/

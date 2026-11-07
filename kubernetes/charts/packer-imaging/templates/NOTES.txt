@@ -1,0 +1,40 @@
+packer-imaging {{ .Chart.Version }} installed as release "{{ .Release.Name }}".
+
+  build namespace     {{ .Values.namespaces.builds }}
+  front-end namespace {{ .Values.namespaces.frontend }}
+  projects            {{ len .Values.projects }} CronJob(s), named {{ .Values.jobPrefix }}<project>
+  runner image        {{ .Values.runner.image }}
+
+Before the first build can run, two Secrets have to exist. Neither is created by
+this chart: one carries the repository credentials, the other the vCenter service
+account and the passwords baked into the image.
+
+  kubectl -n {{ .Values.namespaces.builds }} create secret generic {{ .Values.repo.credentialsSecret }} \
+    --from-literal=username=<git-user> --from-literal=password=<token>
+
+  kubectl -n {{ .Values.namespaces.builds }} create secret generic pkrvars-<project> \
+    --from-file=build.auto.pkrvars.hcl --from-file=common.auto.pkrvars.hcl \
+    --from-file=storage.auto.pkrvars.hcl --from-file=vsphere.auto.pkrvars.hcl
+
+One pkrvars Secret per project. The chart expects:
+
+{{- range $project := .Values.projects }}
+  {{ include "packer-imaging.pkrvarsSecret" (dict "name" $project.name) }}
+{{- end }}
+
+Check what is scheduled:
+
+  kubectl -n {{ .Values.namespaces.builds }} get cronjobs
+
+Paused projects (suspend: true) are listed with SUSPEND=True. Start one by hand:
+
+  kubectl -n {{ .Values.namespaces.builds }} create job \
+    --from=cronjob/{{ $.Values.jobPrefix }}<project> <name>
+
+Then deploy the web front end, which reads these CronJobs:
+
+  kubectl apply -f kubernetes/workloads/web-frontend.yaml
+
+It runs in {{ .Values.namespaces.frontend }} and is authorised only to read
+CronJobs and Jobs here, start a Job, delete one, and read pod logs. Nothing else
+in {{ .Values.namespaces.builds }} is writable by it.

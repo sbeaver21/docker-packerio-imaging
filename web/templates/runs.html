@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <section aria-labelledby="runs-heading">
+    <h2 class="section-heading" id="runs-heading">
+      Runs
+      <span class="count-pill" id="run-count">0</span>
+      <span class="section-note">every Job in <code>{{ namespace }}</code>, newest first</span>
+    </h2>
+
+    <div class="runs-toolbar">
+      <label class="field">
+        <span class="field-label">Show</span>
+        <select id="run-filter">
+          <option value="all">All runs</option>
+          <option value="active">Active only</option>
+          <option value="failed">Failed only</option>
+          <option value="succeeded">Succeeded only</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Project</span>
+        <select id="project-filter">
+          <option value="all">Any project</option>
+        </select>
+      </label>
+      <p class="runs-hint" id="runs-hint"></p>
+    </div>
+
+    <div class="table-scroll">
+      <table class="runs-table">
+        <caption class="visually-hidden">Packer build runs, newest first</caption>
+        <thead>
+          <tr>
+            <th scope="col">Run</th>
+            <th scope="col">Project</th>
+            <th scope="col">State</th>
+            <th scope="col">Started</th>
+            <th scope="col">Took</th>
+            <th scope="col" class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="run-rows">
+          <tr><td colspan="6" class="muted centre">loading&hellip;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Log viewer -------------------------------------------------------- -->
+  <dialog class="logs-dialog" id="logs-dialog" aria-labelledby="logs-title">
+    <div class="logs-head">
+      <div class="logs-head-text">
+        <h2 id="logs-title">Logs</h2>
+        <p class="logs-sub" id="logs-sub">&mdash;</p>
+      </div>
+      <div class="logs-head-actions">
+        <label class="field field-inline">
+          <span class="field-label">Container</span>
+          <select id="logs-container"></select>
+        </label>
+        <button type="button" class="btn btn-quiet btn-sm" id="logs-follow" aria-pressed="true">
+          Follow
+        </button>
+        <button type="button" class="btn btn-quiet btn-sm" id="logs-close" aria-label="Close logs">
+          &times;
+        </button>
+      </div>
+    </div>
+    <div class="logs-body">
+      <pre class="log-output" id="logs-output" tabindex="0">loading&hellip;</pre>
+    </div>
+    <div class="logs-foot">
+      <span class="logs-meta" id="logs-meta"></span>
+      <a class="logs-link" id="logs-open" href="#" hidden>open in new tab</a>
+    </div>
+  </dialog>
+
+  <!-- Confirmation ------------------------------------------------------ -->
+  <dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title">
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p id="confirm-text"></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn btn-quiet" id="confirm-cancel">Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirm-ok">Confirm</button>
+    </div>
+  </dialog>
+
+{% endblock %}

@@ -1,0 +1,58 @@
+BSD 2-Clause License
+
+Copyright (c) 2023-2026, Broadcom. All Rights Reserved.
+Copyright (c) 2026, Image Automation. All Rights Reserved.
+
+The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+ATTRIBUTION
+
+This repository is derived from the VMware/Broadcom sample project
+"packer-examples-for-vsphere", distributed under the BSD 2-Clause License and
+available at https://github.com/vmware-samples/packer-examples-for-vsphere.
+
+The build definitions, kickstart/preseed/autoinstall/Autounattend templates,
+Ansible roles and Terraform examples in this repository originate in that
+project. Modifications made here adapt them to this environment: fixed guest
+addresses, site-specific vSphere inventory names, Salt minion installation,
+Windows hardening payloads, and the Photon OS 5 migration kit.
+
+--------------------------------------------------------------------------------
+THIRD-PARTY COMPONENTS NOT COVERED BY THIS LICENSE
+
+The following are third-party works redistributed or downloaded by the build
+process, and each remains under its own license. They are not relicensed here.
+
+  HashiCorp Packer                          Business Source License 1.1
+                                            (see builds/windows/server/2019/LICENSE.txt)
+  Packer plugins (vsphere, ansible, git,    Mozilla Public License 2.0
+    windows-update, salt)
+  VMware Photon OS                          Multiple open source licenses
+  Ansible / ansible-core                    GNU General Public License v3.0
+  Salt Project                              Apache License 2.0
+  Terraform                                 Business Source License 1.1
+
+Guest operating system media (ISO files) is not distributed with this
+repository and remains subject to the publisher's license terms.

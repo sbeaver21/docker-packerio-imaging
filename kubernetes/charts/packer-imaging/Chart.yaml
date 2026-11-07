@@ -1,0 +1,33 @@
+apiVersion: v2
+name: packer-imaging
+description: >-
+  Build CronJobs for the Packer image pipeline, and the namespaces, quota and
+  limits they run under.
+type: application
+
+# Chart version. Bump on any change to this chart.
+version: 1.0.0
+
+# The pipeline this chart deploys, independent of the chart's own version.
+appVersion: "1.0.0"
+
+kubeVersion: ">=1.27.0-0"
+
+keywords:
+  - packer
+  - vmware
+  - vsphere
+  - image-build
+  - cronjob
+
+home: https://github.com/sbeaver21/docker-packerio-imaging
+icon: https://raw.githubusercontent.com/sbeaver21/docker-packerio-imaging/main/docs/favicon.ico
+sources:
+  - https://github.com/sbeaver21/docker-packerio-imaging
+
+maintainers:
+  - name: sbeaver21
+    url: https://github.com/sbeaver21
+
+annotations:
+  category: Infrastructure

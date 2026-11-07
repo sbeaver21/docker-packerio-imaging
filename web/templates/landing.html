@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <!-- At a glance ------------------------------------------------------- -->
+  <section aria-labelledby="summary-heading">
+    <h2 class="section-heading" id="summary-heading">
+      At a glance
+      <span class="section-note">one read of the namespace, on every refresh</span>
+    </h2>
+    <div class="stat-grid" id="stat-grid">
+      <p class="muted">loading&hellip;</p>
+    </div>
+  </section>
+
+  <!-- Capacity ---------------------------------------------------------- -->
+  <section class="capacity" aria-labelledby="capacity-heading">
+    <h2 class="section-heading" id="capacity-heading">
+      Namespace capacity
+      <span class="section-note">a build that cannot get a pod stays <em>blocked</em></span>
+    </h2>
+    <div class="capacity-grid" id="capacity-grid">
+      <p class="muted">loading&hellip;</p>
+    </div>
+  </section>
+
+  <!-- Needs attention --------------------------------------------------- -->
+  <section aria-labelledby="attention-heading">
+    <h2 class="section-heading" id="attention-heading">
+      Needs attention
+      <span class="count-pill" id="attention-count">0</span>
+      <span class="section-note">paused, failing, or stuck without a pod</span>
+    </h2>
+    <div class="attention-list" id="attention-list">
+      <p class="muted">loading&hellip;</p>
+    </div>
+  </section>
+
+  <!-- Latest runs ------------------------------------------------------- -->
+  <section aria-labelledby="recent-heading">
+    <h2 class="section-heading" id="recent-heading">
+      Latest runs
+      <a class="section-link" href="/runs">All runs</a>
+    </h2>
+    <div class="table-scroll">
+      <table class="runs-table">
+        <caption class="visually-hidden">The five most recent build runs</caption>
+        <thead>
+          <tr>
+            <th scope="col">Run</th>
+            <th scope="col">Project</th>
+            <th scope="col">State</th>
+            <th scope="col">Started</th>
+            <th scope="col">Took</th>
+          </tr>
+        </thead>
+        <tbody id="recent-rows">
+          <tr><td colspan="5" class="muted centre">loading&hellip;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+{% endblock %}

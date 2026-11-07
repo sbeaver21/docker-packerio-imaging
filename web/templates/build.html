@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <section aria-labelledby="projects-heading">
+    <h2 class="section-heading" id="projects-heading">
+      Build projects
+      <span class="count-pill" id="project-count">0</span>
+      <span class="section-note">start a run now, or pause the schedule</span>
+    </h2>
+
+    <p class="page-lede">
+      Each card is one CronJob in <code>{{ namespace }}</code>. <strong>Build now</strong>
+      creates a single Job from it, exactly as the schedule would, and does not change
+      the schedule. <strong>Pause</strong> stops the schedule starting runs; a run already
+      going carries on.
+    </p>
+
+    <div class="project-grid" id="project-grid">
+      <p class="muted">loading&hellip;</p>
+    </div>
+  </section>
+
+{% endblock %}

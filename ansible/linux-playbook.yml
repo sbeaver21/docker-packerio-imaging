@@ -1,0 +1,14 @@
+---
+- name: Playbook for Linux
+  become: true
+  become_method: ansible.builtin.sudo
+  debugger: never
+  gather_facts: true
+  hosts: all
+  vars:
+    enable_cloudinit: false
+  roles:
+    - base
+    - users
+    - configure
+    - clean

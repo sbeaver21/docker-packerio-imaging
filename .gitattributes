@@ -1,0 +1,78 @@
+# =============================================================================
+# docker-packerio-imaging - normalised line endings and binary classification
+# =============================================================================
+# Everything is stored in the repository with LF. Windows checkouts of the
+# scripts are converted back to CRLF, except where a shebang or a guest
+# operating system requires LF to stay LF.
+# =============================================================================
+
+# Default: normalise to LF in the repository, native line endings on checkout.
+* text=auto
+
+# -----------------------------------------------------------------------------
+# Source files
+# -----------------------------------------------------------------------------
+*.hcl         text eol=lf
+*.hcl.example text eol=lf
+*.pkrtpl      text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.json        text eol=lf
+*.md          text eol=lf
+*.tf          text eol=lf
+*.tfvars      text eol=lf
+.gitignore    text eol=lf
+.gitattributes text eol=lf
+*.cfg         text eol=lf
+*.ini         text eol=lf
+*.service     text eol=lf
+
+# Shell scripts run inside Linux guests. A CRLF here fails at the shebang, so
+# these are pinned to LF even on a Windows checkout.
+*.sh          text eol=lf
+tests/*/test  text eol=lf
+*.opts        text eol=lf
+
+# PowerShell runs inside Windows guests and on the build host.
+*.ps1         text eol=crlf
+*.psm1        text eol=crlf
+*.cmd         text eol=crlf
+*.bat         text eol=crlf
+
+# -----------------------------------------------------------------------------
+# Binary files
+# -----------------------------------------------------------------------------
+# Diffs and merges on these are meaningless and would corrupt them.
+*.iso   binary
+*.ISO   binary
+*.msi   binary
+*.msp   binary
+*.exe   binary
+*.rpm   binary
+*.deb   binary
+*.whl   binary
+*.gz    binary
+*.tgz   binary
+*.zip   binary
+*.tar   binary
+*.7z    binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   text eol=lf
+*.pdf   binary
+*.vmdk  binary
+*.ova   binary
+*.ovf   binary
+*.vhd   binary
+*.vhdx  binary
+*.qcow2 binary
+
+# -----------------------------------------------------------------------------
+# Language statistics
+# -----------------------------------------------------------------------------
+# Keep vendored sample material out of the repository language breakdown.
+docs/assets/** linguist-documentation
+tests/**/golden/** linguist-vendored

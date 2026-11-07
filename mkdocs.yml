@@ -1,0 +1,129 @@
+# =============================================================================
+# docker-packerio-imaging documentation site
+# =============================================================================
+# Build with:   mkdocs build --strict
+# Preview with: mkdocs serve
+#
+# Requires: pip install mkdocs-material
+# =============================================================================
+
+site_name: docker-packerio-imaging
+site_description: Automated VMware vSphere machine image builds with HashiCorp Packer
+site_author: Platform Automation Services
+docs_dir: docs
+site_dir: site
+copyright: BSD 2-Clause. See the License page for attribution.
+
+theme:
+  name: material
+  language: en
+  favicon: favicon.ico
+  icon:
+    logo: material/server-network
+    repo: fontawesome/brands/git-alt
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+# Material's icon index and SVG generator are Python callables, so plain YAML
+# cannot express them - the usual trick is PyYAML's `!!python/name:` tag, which
+# generic YAML parsers report as an unresolved tag. The hook wires both into
+# `pymdownx.emoji` at load time instead, keeping this file valid YAML for every
+# tool (editor validators, yamllint, check-yaml, CI).
+hooks:
+  - hooks/material_emoji.py
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - "."
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  # The pages identify operating systems and pass/fail cells with Material
+  # icon shortcodes (:simple-ubuntu:, :octicons-check-circle-16:, ...). Without
+  # this extension they are rendered as the literal shortcode text. The index
+  # and generator are attached by hooks/material_emoji.py - see the `hooks` key.
+  - pymdownx.emoji
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Get the Project: getting-started/get-project.md
+      - Requirements: getting-started/requirements.md
+      - Privileges: getting-started/privileges.md
+      - Configure: getting-started/configure.md
+      - Build: getting-started/build.md
+      - Guest Operating Systems: getting-started/downloads.md
+      - FAQ: getting-started/faq.md
+  - Architecture:
+      - Overview: architecture/overview.md
+  - Reference:
+      - Build Projects: reference/builds.md
+      - Configuration: reference/configuration.md
+      - Provisioning Scripts: reference/scripts.md
+      - Terraform Examples: reference/terraform.md
+      - Template Tests: reference/tests.md
+  - Operations:
+      - Deploy the vSphere Role: operations/terraform-role-deploy.md
+      - Validation: operations/validation.md
+      - Troubleshooting: operations/troubleshooting.md
+      - Windows Builds: operations/windows-builds.md
+      - Web Front End: operations/web-front-end.md
+      - Secrets: operations/secrets.md
+  - Community:
+      - Contributing: community/contributing.md
+      - Support: community/support.md
+      - Code of Conduct: community/code-of-conduct.md
+  - Release Notes: release-notes.md
+  - License: license.md
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/git-alt
+      link: https://github.com/example-org/docker-packerio-imaging
+      name: GitHub repository

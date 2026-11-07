@@ -1,0 +1,39 @@
+{{- if .Values.quota.enabled }}
+# The capacity the web front end draws its bars from. Every build holds a
+# virtual machine for the length of its install, so `pods` is the constraint
+# that actually stops a build starting — which is why a run that cannot get a
+# slot is reported as `blocked` rather than `pending`.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ .Values.quota.name }}
+  namespace: {{ .Values.namespaces.builds }}
+  labels:
+    {{- include "packer-imaging.labels" . | nindent 4 }}
+spec:
+  hard:
+    {{- range $key, $value := .Values.quota.hard }}
+    {{ $key | quote }}: {{ $value | quote }}
+    {{- end }}
+{{- end }}
+{{- if .Values.limitRange.enabled }}
+---
+# Upper bound for a single build pod, and the default it gets when it declares
+# nothing. `max` is what stops one project starving the namespace.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: {{ .Values.limitRange.name }}
+  namespace: {{ .Values.namespaces.builds }}
+  labels:
+    {{- include "packer-imaging.labels" . | nindent 4 }}
+spec:
+  limits:
+    - type: Container
+      default:
+        {{- toYaml .Values.limitRange.default | nindent 8 }}
+      defaultRequest:
+        {{- toYaml .Values.limitRange.defaultRequest | nindent 8 }}
+      max:
+        {{- toYaml .Values.limitRange.max | nindent 8 }}
+{{- end }}

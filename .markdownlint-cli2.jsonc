@@ -1,0 +1,69 @@
+{
+  // markdownlint-cli2 configuration for this repository.
+  //
+  // Run with:  npx markdownlint-cli2 "**/*.md"
+  //
+  // The glob is passed on the command line as well as set here, because a bare
+  // `npx markdownlint-cli2` matches nothing in this tree and reports
+  // "0 issues in 0 files" - a pass that linted no markdown at all. With the
+  // argument it reports "Linting: 42 files"; confirm that line before trusting
+  // a clean result, and raise it when a page is added.
+  "globs": ["**/*.md"],
+  // Generated and vendored trees are never linted.
+  "ignores": [
+    "**/.venv/**",
+    "**/.venv*/**",
+    "**/site-packages/**",
+    "**/node_modules/**",
+    "site/**",
+    "**/.terraform/**",
+    "**/.cocoindex_code/**",
+    "**/.dist/**",
+    // Copilot/MCP instruction files for an editor, not project documentation.
+    ".github/instructions/**"
+  ],
+  //
+  // MD013 (line-length) is enforced for prose, but not for tables or code
+  // blocks: table rows cannot be wrapped without breaking the table, and the
+  // variable reference tables are necessarily wide.
+  // The prose width is 100, not 80. These pages carry long vSphere inventory
+  // paths, Packer variable names and URLs that cannot be wrapped without
+  // breaking them; 80 was set while this gate linted no files at all, so no
+  // page ever met it.
+  "config": {
+    "MD013": {
+      "line_length": 100,
+      "heading_line_length": 80,
+      "code_block_line_length": 100,
+      "headings": true,
+      "code_blocks": false,
+      "tables": false
+    },
+    // MD060 (table-column-style): "compact" keeps tables readable and
+    // maintainable without manually padding every cell to match the header,
+    // consistent with the MD013 tables exemption above.
+    "MD060": {
+      "style": "compact"
+    },
+    // Repeated sub-headings ("Usage", "What to do") are meaningful in different
+    // sections of the same page; only direct duplicates are an error.
+    "MD024": {
+      "siblings_only": true
+    },
+    // MD046 (code-block-style) cannot be satisfied by this Markdown dialect.
+    // MkDocs Material admonitions (`!!! note`, `???+ question`) require their
+    // body to be indented four spaces, which the rule reads as an indented code
+    // block - so every admonition in a page is reported, and pinning the style
+    // to "fenced" instead reports every real fenced block that follows one.
+    "MD046": false,
+    // MkDocs Material renders `<div class="grid cards" markdown>` as the
+    // landing-page card grid; it is the only inline HTML the site needs.
+    "MD033": {
+      "allowed_elements": ["div", "br", "img"]
+    },
+    // Some docs pages are pymdownx snippet includes of the repository README,
+    // CONTRIBUTING, CODE_OF_CONDUCT and LICENSE files, so they legitimately
+    // start with an include rather than a heading.
+    "MD041": false
+  }
+}

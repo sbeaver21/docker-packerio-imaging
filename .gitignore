@@ -1,0 +1,186 @@
+# =============================================================================
+# docker-packerio-imaging - files that must never be committed
+# =============================================================================
+# Two categories:
+#   1. Secrets. Build configuration carrying live vCenter credentials, account
+#      passwords and encrypted password hashes.
+#   2. Generated output and caches. Reproducible, often large, never a source.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Secrets and local configuration
+# -----------------------------------------------------------------------------
+# Packer loads *.auto.pkrvars.hcl automatically. These files hold the real
+# vCenter endpoint, service account and passwords for each build, so they stay
+# on the build host. The committed counterparts are the *.pkrvars.hcl.example
+# files.
+*.auto.pkrvars.hcl
+
+# Explicit configuration overrides, if a build is driven that way.
+*.pkrvars.hcl
+!*.pkrvars.hcl.example
+# The custom-template tests drive Packer with their own var files. Those hold
+# fixture data - disk layouts, test addresses - and no credentials, so they stay
+# tracked even though the rule above excludes var files.
+!tests/**/*.pkrvars.hcl
+
+# Credential material that occasionally lands beside a build.
+*.pem
+*.key
+*.pfx
+id_rsa*
+id_ecdsa*
+
+# -----------------------------------------------------------------------------
+# 2. Generated output
+# -----------------------------------------------------------------------------
+# Build manifests are produced by the manifest post-processor on every run.
+manifests/**/*.json
+!manifests/**/.gitkeep
+
+# Exported OVF artifacts and the Packer artifact cache.
+artifacts/**/*
+!artifacts/**/.gitkeep
+**/artifacts/**/*
+!**/artifacts/**/.gitkeep
+**/packer_cache/**/*
+!**/packer_cache/**/.gitkeep
+**/output/**/*
+
+# Guest operating system images are never in source control.
+*.iso
+*.ISO
+*.img
+*.ova
+*.ovf
+*.vmdk
+*.vhd
+*.vhdx
+*.qcow2
+
+# Analysis and report output generated locally.
+overview.json
+overview_architecture.puml
+validation-report.log
+validation-summary.md
+fmt_check.log
+init2019.log
+validate2019.log
+v_*.log
+*.log
+
+# Terraform binary fetched by scripts/bootstrap/fetch-terraform.*. ~30 MB per
+# platform, pinned in scripts/bootstrap/terraform.lock and verified by digest,
+# so it is reproducible and never needs to be in source control.
+/tools/terraform/
+
+# -----------------------------------------------------------------------------
+# 3. Packer plugin caches
+# -----------------------------------------------------------------------------
+# Plugin binaries are ~80 MB each and are downloaded by `packer init`.
+.packer.d/
+**/.packer.d/
+packer.d/
+**/packer.d/
+!**/packer.d/.gitkeep
+
+# Test harness plugin downloads.
+tests/temp/
+
+# Cache for binaries fetched at build time. Nothing writes here today - the
+# Windows payload wheel has no committed fetcher (see
+# docs/operations/windows-builds.md) - but the directory stays ignored so that
+# adding one does not need a .gitignore change in the same commit.
+/.payload-cache/
+
+# Per-edition scripts ISOs built by scripts/bootstrap/prepare-windows-iso.sh
+# from builds/windows/files/ and the edition's temp-network.ps1.
+builds/windows/packer-iso/
+
+# -----------------------------------------------------------------------------
+# 4. Editor and shell scratch files
+# -----------------------------------------------------------------------------
+# Local variants kept beside the real template while it is being worked on.
+*.bak
+*.save
+*.backup
+*.old
+*.last
+*.sample
+*.test
+*.winrm
+*.orig
+*.rej
+
+# Operating system and editor metadata.
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.idea/
+*.code-workspace
+
+# VS Code workspace-local state. Settings that are meant to be shared live in
+# the repository-root .vscode/settings.json and remain tracked.
+.vscode/gemini-mcp/
+
+# A .vscode/ directory inside a build project is a side effect of opening that
+# subdirectory in an editor, not configuration. builds/linux/photon/4/.vscode/
+# held one Docker extension setting and nothing else.
+**/.vscode/
+!.vscode/
+!.vscode/settings.json
+
+# -----------------------------------------------------------------------------
+# 5. Terraform working state
+# -----------------------------------------------------------------------------
+# State files can contain credentials in clear text.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+tfplan
+crash.log
+
+# .terraform.lock.hcl is deliberately NOT ignored. It records the provider
+# version and the SHA-256 of every platform's package, and it is what makes
+# `terraform init` resolve hashicorp/vsphere 2.12.0 on a Linux build host the
+# same way it did here. A lock file that is not committed pins nothing.
+# Regenerate it with:
+#   terraform providers lock -platform=windows_amd64 -platform=linux_amd64 \
+#     -platform=linux_arm64 -platform=darwin_amd64 -platform=darwin_arm64
+
+# -----------------------------------------------------------------------------
+# 6. Ansible local state
+# -----------------------------------------------------------------------------
+*.retry
+ansible/*.log
+
+# -----------------------------------------------------------------------------
+# 7. Staging directories
+# -----------------------------------------------------------------------------
+# Anchored to the repository root: an unanchored `temp/` would also match
+# builds/windows/files/Temp/, which holds the hardening scripts the Windows
+# Server builds copy into the guest, and Git matches those patterns without
+# regard to case on Windows and macOS.
+/.dist/
+/dist/
+/tmp/
+/temp/
+
+# mkdocs build output.
+/site/
+
+# -----------------------------------------------------------------------------
+# 8. Python and tooling caches
+# -----------------------------------------------------------------------------
+# Virtualenvs used to build the documentation and run the web tests.
+.venv/
+.venv-*/
+**/__pycache__/
+*.pyc
+
+# Local code-index cache.
+.cocoindex_code/

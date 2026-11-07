@@ -1,0 +1,199 @@
+{{- /*
+One CronJob per project in .Values.projects.
+
+The labels and environment set here are not decoration: the web front end in
+web/ reads them to decide what a run is building, which project it belongs to,
+and which Secrets the pod cannot start without. `projects.py` reads
+`packer.io/project` and `packer.io/family`; `runs.py` reads the
+PACKER_PROJECT / PACKER_BUILD_ARGS / GIT_REF env whitelist; and
+`required_secrets()` lists the mounts below so the Build page can warn before
+you press the button rather than after.
+*/ -}}
+{{- range $project := .Values.projects }}
+{{- $schedule := $project.schedule | default $.Values.defaults.schedule }}
+{{- $timeZone := $project.timeZone | default $.Values.defaults.timeZone }}
+{{- $concurrency := $project.concurrencyPolicy | default $.Values.defaults.concurrencyPolicy }}
+{{- $suspend := $project.suspend | default false }}
+{{- $args := $project.args | default $.Values.defaults.args }}
+{{- $resources := $project.resources | default $.Values.defaults.resources }}
+{{- $jobName := include "packer-imaging.jobName" (dict "Values" $.Values "name" $project.name) }}
+{{- $secret := include "packer-imaging.pkrvarsSecret" (dict "name" $project.name) }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $jobName }}
+  namespace: {{ $.Values.namespaces.builds }}
+  labels:
+    {{- include "packer-imaging.labels" $ | nindent 4 }}
+    # Read by the front end to group and label a run (web/projects.py).
+    packer.io/project: {{ $project.name | quote }}
+    packer.io/family: {{ $project.family | quote }}
+  annotations:
+    aria-automation/purpose: {{ $project.purpose | default (printf "Build %s" $project.name) | quote }}
+    # The project directory inside the repo. Shown on the project card.
+    packer.io/path: {{ $project.path | quote }}
+spec:
+  schedule: {{ $schedule | quote }}
+  timeZone: {{ $timeZone | quote }}
+  concurrencyPolicy: {{ $concurrency | quote }}
+  suspend: {{ $suspend }}
+  startingDeadlineSeconds: {{ $.Values.defaults.startingDeadlineSeconds }}
+  successfulJobsHistoryLimit: {{ $.Values.defaults.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $.Values.defaults.failedJobsHistoryLimit }}
+  jobTemplate:
+    metadata:
+      labels:
+        packer.io/project: {{ $project.name | quote }}
+        packer.io/family: {{ $project.family | quote }}
+      annotations:
+        aria-automation/purpose: {{ $project.purpose | default (printf "Build %s" $project.name) | quote }}
+    spec:
+      # 0: a failed Packer build has already left a half-built VM behind;
+      # retrying it silently makes that worse, not better.
+      backoffLimit: {{ $.Values.defaults.backoffLimit }}
+      activeDeadlineSeconds: {{ $.Values.defaults.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ $.Values.defaults.ttlSecondsAfterFinished }}
+      template:
+        metadata:
+          labels:
+            packer.io/project: {{ $project.name | quote }}
+            packer.io/family: {{ $project.family | quote }}
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            # The checkout is a separate step so the build image needs no git and
+            # so a repository change does not need a new runner image.
+            - name: checkout
+              image: {{ $.Values.repo.image | quote }}
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  echo "cloning {{ $.Values.repo.url }} at {{ $.Values.repo.ref }}"
+                  git init --quiet "{{ $.Values.runner.workDir }}"
+                  cd "{{ $.Values.runner.workDir }}"
+                  git remote add origin "{{ $.Values.repo.url }}"
+                  git fetch --quiet --depth 1 origin "{{ $.Values.repo.ref }}"
+                  # FETCH_HEAD rather than a branch name: the ref may be a tag,
+                  # and a shallow fetch of one still lands here.
+                  git checkout --quiet --detach FETCH_HEAD
+                  git rev-parse HEAD > /workspace/.git-revision
+                  echo "checked out $(cat /workspace/.git-revision)"
+              envFrom:
+                - secretRef:
+                    name: {{ $.Values.repo.credentialsSecret }}
+                    optional: true
+              env:
+                # git needs a writable HOME; the checkout itself must be owned
+                # by the same uid the build runs as, or the manifest
+                # post-processor cannot write into the project directory.
+                - name: HOME
+                  value: /tmp
+              volumeMounts:
+                - name: workspace
+                  mountPath: {{ $.Values.runner.workDir }}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+          containers:
+            - name: packer
+              image: {{ $.Values.runner.image | quote }}
+              imagePullPolicy: {{ $.Values.runner.imagePullPolicy | quote }}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  cd "{{ $.Values.runner.workDir }}"
+                  export PACKER_PLUGIN_PATH="{{ $.Values.runner.pluginCacheDir }}"
+                  export CHECKPOINT_DISABLE=1
+                  cd "${PACKER_PROJECT:?PACKER_PROJECT is not set}"
+                  echo "building $(pwd)"
+                  packer init .
+                  # The variable files are mounted at a neutral path and passed
+                  # explicitly. Mounting the Secret over the project directory
+                  # would hide the checked-out *.pkr.hcl files themselves.
+                  var_files=""
+                  for file in /pkrvars/*.hcl; do
+                    [ -e "$file" ] || continue
+                    echo "using $file"
+                    var_files="$var_files -var-file=$file"
+                  done
+                  if [ -z "$var_files" ]; then
+                    echo "no *.hcl files in /pkrvars; the pkrvars Secret is empty" >&2
+                    exit 1
+                  fi
+                  # Word-splitting is deliberate in both: these carry separate
+                  # argv entries, and both come from values.yaml or a Secret
+                  # this operator controls, never from user input.
+                  # shellcheck disable=SC2086
+                  exec packer build $var_files ${PACKER_BUILD_ARGS:-} .
+              env:
+                # This trio is a contract with web/runs.py (INTERESTING_ENV).
+                # Every one of them is displayed in the UI; none is a secret.
+                - name: PACKER_PROJECT
+                  value: {{ $project.path | quote }}
+                - name: PACKER_BUILD_ARGS
+                  value: {{ join " " $args | quote }}
+                - name: GIT_REF
+                  value: {{ $.Values.repo.ref | quote }}
+                - name: HOME
+                  value: /tmp
+                - name: TMPDIR
+                  value: /tmp
+              resources:
+                {{- toYaml $resources | nindent 16 }}
+              volumeMounts:
+                - name: workspace
+                  mountPath: {{ $.Values.runner.workDir }}
+                # A neutral path, passed with -var-file above. It cannot be
+                # mounted onto the project directory: that would mask the
+                # checked-out template files the build needs.
+                - name: pkrvars
+                  mountPath: /pkrvars
+                  readOnly: true
+                - name: scripts
+                  mountPath: {{ $.Values.scripts.mountPath }}
+                  readOnly: true
+                - name: plugin-cache
+                  mountPath: {{ $.Values.runner.pluginCacheDir }}
+                - name: tmp
+                  mountPath: /tmp
+              securityContext:
+                # Packer writes into its plugin cache and the checkout; a
+                # read-only root filesystem would need both bind-mounted, which
+                # the plugin cache already is. Root filesystem stays writable so
+                # `packer init` can install plugins on first run.
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: workspace
+              emptyDir: {}
+            - name: pkrvars
+              secret:
+                secretName: {{ $secret }}
+                # Not optional: with no variable files the build fails on the
+                # first unset variable anyway, and the UI should be able to say
+                # the Secret is missing before the run starts.
+                optional: false
+            - name: scripts
+              configMap:
+                name: {{ $.Values.scripts.configMap }}
+                optional: true
+            - name: plugin-cache
+              emptyDir: {}
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 1Gi
+{{- end }}

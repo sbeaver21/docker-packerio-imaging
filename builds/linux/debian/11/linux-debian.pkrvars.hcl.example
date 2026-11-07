@@ -1,0 +1,23 @@
+# Copyright 2023-2024 Broadcom. All rights reserved.
+# SPDX-License-Identifier: BSD-2
+
+/*
+    DESCRIPTION:
+    Debian 11 build variables.
+*/
+
+// Guest Operating System Metadata
+vm_guest_os_name     = "debian"
+vm_guest_os_version  = "11.9"
+
+// Virtual Machine Guest Operating System Setting
+vm_guest_os_type = "other5xLinux64Guest"
+
+// Virtual Machine Hardware Settings
+vm_firmware              = "efi-secure"
+
+// Removable Media Settings
+iso_datastore_path       = "iso/linux/debian"
+iso_content_library_item = "debian-11.9.0-amd64-netinst"
+iso_file                 = "debian-11.9.0-amd64-netinst.iso"
+

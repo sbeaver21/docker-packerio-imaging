@@ -1,0 +1,16 @@
+1) Copy folder called "Temp" in the c: root
+2) If testing run Powershell in ADMIN mode and run: 
+Set-ExecutionPolicy Bypass -Scope Process -Force 
+C:\Temp\Apply-FullVulnerabilityHardening-v2.ps1 -TestMode
+
+If Applying it run Powershell in ADMIN mode and run:
+
+Set-ExecutionPolicy Bypass -Scope Process -Force 
+C:\Temp\Apply-FullVulnerabilityHardening-v2.ps1 -ApplyNow
+
+TEST MODE simulates the changes without modifying anything
+APPLY MODE applies all changes and generates output log of results placed in the C:\Temp folder
+
+
+
+

@@ -1,0 +1,24 @@
+# Copyright 2023-2024 Broadcom. All rights reserved.
+# SPDX-License-Identifier: BSD-2
+
+/*
+    DESCRIPTION:
+    Fedora Server 40 build variables.
+    Packer Plugin for VMware vSphere: 'vsphere-iso' builder.
+*/
+
+// Guest Operating System Metadata
+vm_guest_os_name     = "fedora"
+vm_guest_os_version  = "40"
+
+// Virtual Machine Guest Operating System Setting
+vm_guest_os_type      = "fedora64Guest"
+vm_guest_os_cloudinit = true
+
+// Virtual Machine Hardware Settings
+vm_firmware              = "efi-secure"
+
+// Removable Media Settings
+iso_datastore_path       = "iso/linux/fedora"
+iso_content_library_item = "Fedora-Server-dvd-x86_64-40-1.14"
+iso_file                 = "Fedora-Server-dvd-x86_64-40-1.14.iso"

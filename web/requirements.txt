@@ -1,0 +1,18 @@
+# Runtime dependencies for the image builder front end.
+#
+# Three packages, all of them load-bearing:
+#
+#   Flask       the web framework and the template engine.
+#   kubernetes  the official client, used in kube.py and nowhere else.
+#   waitress    a real WSGI server. Flask's built-in server is single-process
+#               and prints a warning for a reason; this has to survive being
+#               left running for months.
+#
+# Ranges rather than pins: this is deployed by mounting a ConfigMap next to a
+# current interpreter, not by publishing an image to a registry, so a patch
+# release of Flask should not need a commit. The major version is capped so a
+# breaking release cannot arrive unannounced.
+
+Flask>=3.1,<4
+kubernetes>=31,<41
+waitress>=3.0,<4

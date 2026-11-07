@@ -1,0 +1,343 @@
+# =============================================================================
+#  packer-imaging
+# =============================================================================
+#  Everything this chart deploys is described here. The two things to read
+#  before changing anything:
+#
+#    * `jobPrefix` and `labels.partOf` are a CONTRACT with the web front end in
+#      `web/`. The UI identifies a build by its CronJob name and recovers the
+#      project name by stripping the prefix (see `PROJECT_PREFIX` in
+#      `web/runs.py`). Change either here and the dashboard shows every run as
+#      an orphan. Change both ends together, or not at all.
+#
+#    * `projects` is the single source of truth for what gets scheduled. Each
+#      entry becomes one CronJob named `<jobPrefix><name>`, and `path` must be a
+#      real project directory under `builds/` — `--syntax-check` is not run
+#      against it here, so a typo fails at build time, not at install time.
+# =============================================================================
+
+# -- Namespaces ---------------------------------------------------------------
+# Two, deliberately. The builds run in one; the web front end runs in the other
+# and is granted narrow RBAC into this one. Collapsing them would give the web
+# pod access to its own namespace for no reason.
+namespaces:
+  # Create them. Set false if your cluster provisions namespaces itself.
+  create: true
+  # Where the build CronJobs and their Jobs live. The UI reads this namespace.
+  builds: packer-imaging
+  # Where the web Deployment, ServiceAccount and ConfigMap live.
+  frontend: packer-frontend
+
+# -- Naming contract ----------------------------------------------------------
+# Suffix appended to every CronJob name. MUST match PROJECT_PREFIX in
+# web/runs.py, or the dashboard cannot map a run back to its project.
+jobPrefix: "aria-build-"
+
+labels:
+  # Applied as app.kubernetes.io/part-of to everything this chart creates.
+  partOf: aria-automation
+  # Applied as app.kubernetes.io/managed-by. Helm sets this itself; it is here
+  # so a `helm template` run outside a release looks the same as an installed
+  # one.
+  managedBy: Helm
+
+# -- Runner -------------------------------------------------------------------
+# The image the build container runs. It carries Packer, the vSphere plugin,
+# terraform, ansible-core, jq and xorriso. Built from kubernetes/runner/.
+runner:
+  image: ghcr.io/sbeaver21/packer-imaging-runner:1.0.0
+  imagePullPolicy: IfNotPresent
+  # Where the repo is checked out inside the container.
+  workDir: /workspace
+  # Packer needs a writable plugin cache outside the read-only checkout.
+  pluginCacheDir: /var/cache/packer
+
+# -- Source -------------------------------------------------------------------
+# Where the build definitions come from. The checkout happens in an init
+# container so the build container itself needs no git.
+repo:
+  url: https://github.com/sbeaver21/docker-packerio-imaging.git
+  ref: refs/heads/main
+  image: alpine/git:2.47.2
+  # A Secret with `username` and `password` (or `token`) keys. Required for a
+  # private repo; harmless for a public one.
+  credentialsSecret: aria-repo-credentials
+
+# -- Scripts ------------------------------------------------------------------
+# ConfigMap holding scripts/ from the checked-out repo, so a provisioning
+# change does not need a new runner image.
+scripts:
+  configMap: aria-image-build-scripts
+  mountPath: /scripts
+
+# -- vSphere credentials ------------------------------------------------------
+# Every project also mounts its own pkrvars Secret named `pkrvars-<name>`. That
+# Secret holds the project's *.auto.pkrvars.hcl files and is NOT created here:
+# it carries the vCenter service account and the passwords baked into the
+# image, so it is provisioned out of band. See docs/operations/secrets.md.
+vsphere:
+  credentialsSecret: vsphere-credentials
+
+# -- Defaults -----------------------------------------------------------------
+# Applied to every project unless the project overrides them.
+defaults:
+  schedule: "0 3 * * 0"
+  timeZone: America/New_York
+  # Forbid: a second run waits rather than competing for a 16-pod quota.
+  concurrencyPolicy: Forbid
+  # 0: do not retry. A failed Packer build has already left a half-built VM on
+  # the datastore; retrying silently makes that worse.
+  backoffLimit: 0
+  # Two hours. A Windows Server build taking longer than this is stuck, and the
+  # Job should be reaped rather than hold a quota slot for ever.
+  activeDeadlineSeconds: 7200
+  # Keep finished Jobs for a week, so the Runs page has history.
+  ttlSecondsAfterFinished: 604800
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  args:
+    - "-force"
+  resources:
+    requests:
+      cpu: "2"
+      memory: 4Gi
+    limits:
+      cpu: "4"
+      memory: 8Gi
+
+# -- Quota and limits ---------------------------------------------------------
+# A build holds a virtual machine for the length of the install, so the pod
+# count is the real constraint. These numbers are what the web front end's
+# capacity bars are drawn from.
+quota:
+  enabled: true
+  name: packer-imaging-quota
+  hard:
+    pods: "16"
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    count/jobs.batch: "80"
+
+limitRange:
+  enabled: true
+  name: packer-imaging-limits
+  default:
+    cpu: "4"
+    memory: 8Gi
+  defaultRequest:
+    cpu: "2"
+    memory: 4Gi
+  max:
+    cpu: "8"
+    memory: 16Gi
+
+# =============================================================================
+#  Projects
+# =============================================================================
+# One CronJob each, named `<jobPrefix><name>`. `path` is the project directory
+# inside the repo and is what `packer build` is given.
+#
+# The ten Windows Server entries are deliberately paired: the two parent
+# projects build all four editions in one run and are scheduled; the eight
+# per-edition projects are suspended by default because they exist to rebuild a
+# single edition on demand from the Build page. Running both would build every
+# edition twice.
+projects:
+  # -- Linux ----------------------------------------------------------------
+  - name: almalinux-8
+    path: builds/linux/almalinux/8
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 2 * * 1"
+
+  - name: almalinux-9
+    path: builds/linux/almalinux/9
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 3 * * 1"
+
+  - name: centos-stream-9
+    path: builds/linux/centos/9
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 4 * * 1"
+
+  - name: debian-11
+    path: builds/linux/debian/11
+    family: linux
+    purpose: Preseed install, Ansible baseline
+    schedule: "0 2 * * 4"
+
+  - name: debian-12
+    path: builds/linux/debian/12
+    family: linux
+    purpose: Preseed install, Ansible baseline
+    schedule: "0 3 * * 4"
+
+  - name: fedora-40
+    path: builds/linux/fedora/40
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 4 * * 4"
+
+  - name: oracle-8
+    path: builds/linux/oracle/8
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 2 * * 3"
+
+  - name: oracle-9
+    path: builds/linux/oracle/9
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 3 * * 3"
+
+  - name: rhel-96
+    path: builds/linux/rhel/96
+    family: linux
+    purpose: Kickstart install, shell provisioning
+    schedule: "0 4 * * 0"
+
+  - name: rhel-100
+    path: builds/linux/rhel/100
+    family: linux
+    purpose: Kickstart install, shell provisioning
+    schedule: "0 5 * * 0"
+
+  - name: rocky-8
+    path: builds/linux/rocky/8
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 2 * * 2"
+
+  - name: rocky-9
+    path: builds/linux/rocky/9
+    family: linux
+    purpose: Kickstart install, Ansible baseline
+    schedule: "0 3 * * 2"
+
+  - name: sles-15
+    path: builds/linux/sles/15
+    family: linux
+    # Registers with SUSE Customer Connect when scc_username is set, and
+    # unregisters before sealing.
+    purpose: AutoYaST install, Ansible baseline
+    schedule: "0 5 * * 4"
+
+  - name: ubuntu-20-04
+    path: builds/linux/ubuntu/20-04-lts
+    family: linux
+    purpose: Autoinstall, shell provisioning
+    schedule: "0 2 1 * *"
+
+  - name: ubuntu-22-04
+    path: builds/linux/ubuntu/22-04-lts
+    family: linux
+    purpose: Autoinstall, shell provisioning
+    schedule: "0 3 1 * *"
+
+  - name: ubuntu-24-04
+    path: builds/linux/ubuntu/24-04-lts
+    family: linux
+    purpose: Autoinstall, shell provisioning
+    schedule: "0 5 1 * *"
+
+  - name: ubuntu-26-04
+    path: builds/linux/ubuntu/26-04-lts
+    family: linux
+    purpose: Autoinstall, shell provisioning
+    schedule: "0 6 1 * *"
+
+  - name: photon-4
+    path: builds/linux/photon/4
+    family: linux
+    purpose: Kickstart install, shell provisioning
+    schedule: "0 2 * * 0"
+
+  - name: photon-5
+    path: builds/linux/photon/5
+    family: linux
+    purpose: Kickstart install, shell provisioning
+    schedule: "0 3 * * 0"
+
+  # -- Windows --------------------------------------------------------------
+  # The two parents build all four editions in one run.
+  - name: windows-server-2022
+    path: builds/windows/server/2022
+    family: windows
+    purpose: Standard and Datacenter, Core and Desktop Experience
+    schedule: "30 1 * * 6"
+
+  - name: windows-server-2025
+    path: builds/windows/server/2025
+    family: windows
+    purpose: Standard and Datacenter, Core and Desktop Experience
+    schedule: "30 2 * * 6"
+
+  - name: windows-desktop-10
+    path: builds/windows/desktop/10
+    family: windows
+    # The evaluation media carries Enterprise only; Professional has no
+    # evaluation mode and will not build from it.
+    purpose: Enterprise from evaluation media
+    schedule: "30 3 * * 6"
+
+  - name: windows-desktop-11
+    path: builds/windows/desktop/11
+    family: windows
+    purpose: Enterprise from evaluation media
+    schedule: "30 4 * * 6"
+
+  # -- Windows, per edition -------------------------------------------------
+  # Suspended: the parent above already builds these. Use the Build page to
+  # start one when a single edition needs rebuilding.
+  - name: windows-server-2022-standard-core
+    path: builds/windows/server/2022-standard-core
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2022-standard-dexp
+    path: builds/windows/server/2022-standard-dexp
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2022-datacenter-core
+    path: builds/windows/server/2022-datacenter-core
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2022-datacenter-dexp
+    path: builds/windows/server/2022-datacenter-dexp
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2025-standard-core
+    path: builds/windows/server/2025-standard-core
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2025-standard-dexp
+    path: builds/windows/server/2025-standard-dexp
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2025-datacenter-core
+    path: builds/windows/server/2025-datacenter-core
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
+
+  - name: windows-server-2025-datacenter-dexp
+    path: builds/windows/server/2025-datacenter-dexp
+    family: windows
+    purpose: Rebuild one edition on demand
+    suspend: true
