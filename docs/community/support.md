@@ -13,5 +13,5 @@ Please try to include as much information as you can. Details like these are inc
 
 You can also start a discussion on the [discussions][discussions] area to ask questions or share ideas.
 
-[issues]: https://github.com/example-org/docker-packerio-imaging/issues
-[discussions]: https://github.com/example-org/docker-packerio-imaging/discussions
+[issues]: https://github.com/sbeaver21/docker-packerio-imaging/issues
+[discussions]: https://github.com/sbeaver21/docker-packerio-imaging/discussions

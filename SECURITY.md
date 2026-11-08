@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Report security issues privately to the Platform Automation Services team
-through the GitHub repository (`example-org/docker-packerio-imaging`) security issue
+through the GitHub repository (`sbeaver21/docker-packerio-imaging`) security issue
 type, or directly to the repository maintainers.
 
 Do not open a public issue, and do not include live credentials, hostnames or

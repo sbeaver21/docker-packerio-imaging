@@ -125,5 +125,5 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/git-alt
-      link: https://github.com/example-org/docker-packerio-imaging
+      link: https://github.com/sbeaver21/docker-packerio-imaging
       name: GitHub repository

@@ -5,7 +5,7 @@ icon: octicons/gift-24
 # Get the Project
 
 ```shell
-git clone https://github.com/example-org/docker-packerio-imaging.git
+git clone https://github.com/sbeaver21/docker-packerio-imaging.git
 cd docker-packerio-imaging
 ```
 

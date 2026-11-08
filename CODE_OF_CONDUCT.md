@@ -57,7 +57,7 @@ individual is officially representing the project in public spaces.
 
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
 reported to the maintainers through the Platform Automation Services team, or
-through the GitHub repository (`example-org/docker-packerio-imaging`).
+through the GitHub repository (`sbeaver21/docker-packerio-imaging`).
 
 All complaints will be reviewed and investigated promptly and fairly. All
 maintainers are obligated to respect the privacy and security of the reporter of
