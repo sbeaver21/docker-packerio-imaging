@@ -1,5 +1,62 @@
 # Release notes
 
+## Unreleased
+
+### Vendor reference material
+
+`references/` joins the repository: the material that covers what happens to an
+image after it is published, and the one alternative builder. It is vendor
+material, separate from this repository's own reference pages under
+`docs/reference/`.
+
+- **`supervisor-images/`** — fifteen Packer templates using the
+  `vsphere-supervisor` builder instead of `vsphere-iso`: `examples/` is the
+  upstream sample set as published, `site/` adds RHEL 9.4/9.6/10.0 and Windows
+  Server 2022/2025 with full provisioning sequences, cloud-init and Sysprep
+  bootstrap data, an Ansible sealing playbook, and the `serve-iso` helpers for
+  importing an ISO by URL. Each template now carries a
+  `packer { required_plugins }` block, so `packer init <template>` resolves the
+  builder; the templates are otherwise unchanged.
+- **`windows-vcf-image/`** — the Cloudbase-Init configuration a Windows image
+  needs before VCF Automation 9.0 will initialise it: the two `.conf` files,
+  their plugin order, the `Unattend.xml` passes, and the Sysprep caveat.
+- **`vcfa-ad-join/`** — the Orchestrator workflow, event subscription and
+  `project_associations` mapping that replace the Active Directory join removed
+  from VCF Automation 9.0, with the attachment.
+
+Documented under [Reference material](references/index.md), with a folder-level
+[`references/README.md`][references-readme].
+
+### Fixed
+
+- **`scripts/serve-iso.*` looked one directory too high.** Both scripts walked
+  five levels up from `scripts/` to find the repository root, but it is four, so
+  they resolved `iso/` beside the repository instead of inside it and exited on
+  "ISO directory not found". `serve-iso.ps1` also passed
+  `-AdditionalChildPaths`, which is not a `Join-Path` parameter; it now uses
+  plain path arithmetic. Verified: the PowerShell form resolves to the
+  repository root and parses with no errors.
+
+### Changed
+
+- `packer fmt -check -recursive .` now covers `references/`, so the templates
+  there are canonically formatted and stay that way.
+- The Windows ADK *Deployment and Imaging Tools* carried under
+  `references/windows-vcf-image/` are gitignored — around 21 MB of Microsoft
+  binaries between the folder and its zip. The `.conf` fragments that matter are
+  tracked.
+- `README.md`, the project structure page and the validation report describe the
+  new directory, and state what has and has not been checked there.
+- `scripts/windows/README-WINDOWS-ISO.md` no longer names a specific drive and
+  folder for the Windows build host; it says "a Windows host", which is what the
+  point needed.
+- Markdownlint exempts the three Broadcom READMEs as vendored pages. Everything
+  written here, including `references/README.md`, is still linted. It also
+  ignores `.pytest_cache/`, which pytest writes with its own `.gitignore` and
+  which markdownlint would otherwise count as a page.
+
+[references-readme]: https://github.com/sbeaver21/docker-packerio-imaging/blob/main/references/README.md
+
 ## 1.0.0
 
 First public release.

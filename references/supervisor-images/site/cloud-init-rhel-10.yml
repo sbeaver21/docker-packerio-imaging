@@ -1,0 +1,42 @@
+#cloud-config
+# Cloud-init bootstrap data for RHEL 10 VM template
+# Used by the vsphere-supervisor builder for initial VM customization
+#
+# Identical in content to cloud-init-rhel-9.yml: nothing in this bootstrap is
+# release-specific. It exists separately because rhel-10-0.pkr.hcl defaults
+# bootstrap_data_file to this filename, and a default that resolves to a file
+# which is not in the directory fails the build before the VM is created.
+
+ssh_authorized_keys:
+  - ""
+
+users:
+  - name: packer
+    groups: wheel
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    passwd: "$6$rounds=4096$salt$hashedpassword"  # default: packer
+
+chpasswd:
+  list: |
+    packer:packer
+  expire: false
+
+ssh_pwauth: true
+
+package_update: false
+package_upgrade: false
+
+write_files:
+  - path: /etc/dnf/dnf.conf
+    content: |
+      [main]
+      gpgcheck=1
+      installonly_limit=3
+      clean_requirements_on_remove=True
+      best=False
+      skip_if_unavailable=True
+      max_parallel_downloads=10
+
+runcmd:
+  - systemctl restart sshd

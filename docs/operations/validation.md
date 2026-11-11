@@ -154,6 +154,42 @@ is clean: every build definition is canonically formatted. Run
 `terraform fmt -check -recursive terraform` passes as well; the Terraform
 examples are canonical.
 
+Because `packer fmt -check -recursive .` walks the repository root, it also
+covers the templates under `references/`. They are canonically formatted, and
+they have to stay that way: a change there can fail the formatting gate even
+though no build project was touched.
+
+---
+
+## Vendor reference material under `references/`
+
+The material described in [Reference material](../references/index.md) is not
+part of the build pipeline, and it is checked to a lower standard - syntax and
+formatting only.
+
+| Check | Command | Result |
+| :---- | :------ | :----- |
+| HCL formatting, including `references/` | `packer fmt -check -recursive .` | Clean |
+| HCL syntax, 15 supervisor templates | `packer validate -syntax-only <template>.pkr.hcl` | Pass |
+| Plugin pins present | `grep -rl 'required_plugins' references --include='*.pkr.hcl'` | All 15 carry a `packer {}` block pinning `github.com/vmware/vsphere` |
+| `packer init` per template | `packer init <template>.pkr.hcl` | Succeeds; the directory cannot be used, because it holds several templates that declare the same variables |
+| Full `packer validate` | - | Not run: the builder reads the current context's namespace from a kubeconfig, and there is no Supervisor cluster here |
+| YAML parse | `cloud-init-rhel-9.yml`, `cloud-init-rhel-10.yml`, both `cleanup-playbook.yml` files, four sysprep files | Pass |
+| Bootstrap data resolves | every `bootstrap_data_file` default names a file in its own directory | Pass. `rhel-10-0.pkr.hcl` pointed at a `cloud-init-rhel-10.yml` that was not in the directory; it is now, with the same content as the RHEL 9 file |
+| Any build | - | No |
+
+Two properties of that material are structural, not defects, and are worth
+knowing before treating a failure there as a regression:
+
+- **One directory, many templates.** `references/supervisor-images/site/`
+  holds ten independent templates that repeat `image_name`, `class_name` and
+  `storage_class`. `packer init .` reports a wall of `Duplicate variable`
+  errors; `packer init <template>.pkr.hcl` is the correct form.
+- **No kubeconfig, no full validation.** `packer validate` evaluates the
+  builder's `supervisor_namespace`, which defaults to the current kubeconfig
+  context. It fails with `failed to get current context's namespace in
+  kubeconfig file` on a host without one.
+
 ---
 
 ## Also checked
@@ -192,6 +228,10 @@ examples are canonical.
   succeeds or that the privileges are sufficient — only a build under the role
   proves that, as [Deploy the vSphere role](terraform-role-deploy.md) step 8
   describes.
+- **Whether anything under `references/` works.** Those templates were parsed,
+  not run: no Supervisor cluster and no VCF Automation instance were available.
+  The Cloudbase-Init and Orchestrator procedures are documentation, and were not
+  exercised at all.
 
 ---
 

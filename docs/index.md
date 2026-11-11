@@ -56,6 +56,18 @@ All build definitions are written in the HashiCorp Configuration Language
 | [Configure](getting-started/configure.md) | Every input variable a build takes |
 | [Build](getting-started/build.md) | Running a build |
 | [Architecture](architecture/overview.md) | How the pipeline fits together |
+| [Reference material](references/index.md) | Taking a finished image into VCF Automation 9.0 |
+
+## After the image is published
+
+Publishing to a content library is where this pipeline stops. The vendor
+material under `references/` covers what the platform does next: initialising a
+Windows guest on first boot through Cloudbase-Init, joining provisioned machines
+to Active Directory in VCF Automation 9.0, and the alternative
+`vsphere-supervisor` builder for clusters where the image is created through
+the VM-Operator API rather than from an ISO attached in a vCenter.
+
+None of it is read by a build. See [Reference material](references/index.md).
 
 ## Provenance
 

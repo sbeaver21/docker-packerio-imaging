@@ -113,6 +113,9 @@ Do not commit:
 - plugin caches (`.packer.d/`, `packer.d/`), `packer_cache/`
 - build output (`manifests/*.json`, `artifacts/`, `*.iso`)
 - editor or scratch files (`*.bak`, `*.save`, `*.old`, `*.last`, `*.sample`)
+- the Windows ADK binaries under `references/**/amd64/` and
+  `references/**/amd64.zip`; they are Microsoft's, they are 21 MB together, and
+  the copy command in `references/README.md` restores them
 
 `.gitignore` covers all of these. One deliberate exception: `.gitignore`
 re-includes `tests/**/*.pkrvars.hcl`, because those fixture files carry disk
@@ -157,6 +160,32 @@ panics on an `export` block that omits `directory_permission`, and reports it as
 `unexpected EOF` rather than as a diagnostic. The Ubuntu projects set
 `directory_permission = "0750"` explicitly for that reason; keep it when you
 copy one. See `docs/operations/validation.md`.
+
+`packer fmt -check -recursive .` walks the repository root, so it covers
+`references/` as well as `builds/`. A template there that is not canonically
+formatted fails the same gate.
+
+### Vendor reference material under `references/`
+
+Those templates are not built by this repository, so they are held to syntax
+only — but the formatting gate still applies, and they are initialised and
+validated **per file**, because each directory holds several independent
+templates that declare the same variable names:
+
+```shell
+cd references/supervisor-images/site
+packer init                  rhel-9-6.pkr.hcl
+packer validate -syntax-only rhel-9-6.pkr.hcl
+```
+
+`packer init .` fails with `Duplicate variable` for that reason, and a plain
+`packer validate` needs a kubeconfig for the Supervisor cluster. Neither is a
+defect in the template. See `docs/operations/validation.md` for what has been
+checked there and what has not.
+
+Do not "fix" a failure in that material by editing this repository's build
+projects: they share no code. If the material needs a change, change it there
+and say in the pull request which template you validated.
 
 If `packer fmt -check` reports files you did not touch, format **only** the
 files in your change:

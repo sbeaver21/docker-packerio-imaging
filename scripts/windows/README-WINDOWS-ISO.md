@@ -32,7 +32,7 @@ On Linux, xorriso also warns:
 xorriso : WARNING : -volid text does not comply to ISO 9660 / ECMA 119 rules
 ```
 
-So the same templates work from `D:\docker-packerio-imaging` on a Windows box and fail when
+So the same templates work when Packer runs on a Windows host and fail when
 built in the `hashicorp/packer` container.
 
 Because `F:` is unreadable, every first-logon command in the answer file

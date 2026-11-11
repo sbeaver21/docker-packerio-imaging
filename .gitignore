@@ -58,6 +58,15 @@ artifacts/**/*
 *.vhdx
 *.qcow2
 
+# Windows ADK Deployment and Imaging Tools, carried as reference material beside
+# the VCF image preparation notes under references/windows-vcf-image/. Around
+# 19 MB of Microsoft binaries, and amd64.zip is the same payload a second time.
+# They are not source and not redistributable by this project;
+# references/README.md says how to restore them from an installed ADK. The .conf
+# fragments beside them stay tracked - they are the part that has to be read.
+references/**/amd64/
+references/**/amd64.zip
+
 # Analysis and report output generated locally.
 overview.json
 overview_architecture.puml

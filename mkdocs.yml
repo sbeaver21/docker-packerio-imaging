@@ -112,6 +112,11 @@ nav:
       - Windows Builds: operations/windows-builds.md
       - Web Front End: operations/web-front-end.md
       - Secrets: operations/secrets.md
+  - References:
+      - Overview: references/index.md
+      - vSphere Supervisor Images: references/vsphere-supervisor.md
+      - Windows VCF Automation Image: references/windows-vcf-image.md
+      - Active Directory Join: references/vcfa-ad-join.md
   - Community:
       - Contributing: community/contributing.md
       - Support: community/support.md

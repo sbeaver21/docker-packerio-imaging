@@ -6,7 +6,7 @@
   // The glob is passed on the command line as well as set here, because a bare
   // `npx markdownlint-cli2` matches nothing in this tree and reports
   // "0 issues in 0 files" - a pass that linted no markdown at all. With the
-  // argument it reports "Linting: 42 files"; confirm that line before trusting
+  // argument it reports "Linting: 47 files"; confirm that line before trusting
   // a clean result, and raise it when a page is added.
   "globs": ["**/*.md"],
   // Generated and vendored trees are never linted.
@@ -19,8 +19,21 @@
     "**/.terraform/**",
     "**/.cocoindex_code/**",
     "**/.dist/**",
+    // pytest's cache, written by `python -m pytest web/tests`. It ships its own
+    // .gitignore so git never reports it, but markdownlint does not read
+    // gitignore and would lint the README inside it.
+    ".pytest_cache/**",
+    "**/.pytest_cache/**",
     // Copilot/MCP instruction files for an editor, not project documentation.
-    ".github/instructions/**"
+    ".github/instructions/**",
+    // Broadcom's own articles, carried unchanged under references/. Their table
+    // padding, line lengths and fence spacing are theirs, and reformatting them
+    // would turn every re-sync from the source article into a manual diff of
+    // hundreds of lines. references/README.md and docs/references/ are written
+    // here and are linted; only the vendored pages are exempt.
+    "references/vcfa-ad-join/README.md",
+    "references/supervisor-images/README.md",
+    "references/windows-vcf-image/README.md"
   ],
   //
   // MD013 (line-length) is enforced for prose, but not for tables or code

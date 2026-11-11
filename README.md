@@ -33,6 +33,7 @@ attribution notice that travels with them.
     - [Windows](#windows)
   - [How a build works](#how-a-build-works)
     - [Provisioning by distribution](#provisioning-by-distribution)
+  - [After the build](#after-the-build)
   - [Requirements](#requirements)
     - [Build host](#build-host)
     - [Target platform](#target-platform)
@@ -122,6 +123,27 @@ that configure the builder.
 
 ---
 
+## After the build
+
+Publishing to a content library is where this pipeline stops. Getting that image
+into **VCF Automation 9.0** - initialising a Windows guest on first boot, and
+joining provisioned machines to Active Directory - happens in the platform, and
+the vendor material for it is in `references/`:
+
+- **[Windows VCF Automation image][d24]** - the Cloudbase-Init configuration a
+  Windows image needs before VCF Automation can set its hostname, address and
+  user data.
+- **[Active Directory join][d25]** - the Orchestrator workflow and event
+  subscription that replace the AD join removed from VCF Automation 9.0.
+- **[vSphere Supervisor images][d23]** - an alternative builder for clusters
+  where the image is created through the VM-Operator API rather than from an ISO
+  attached in a vCenter.
+
+None of it is part of the build pipeline: no `builds/` project reads it, and no
+CronJob runs it.
+
+---
+
 ## Requirements
 
 ### Build host
@@ -158,6 +180,8 @@ with no outbound internet access needs the plugin binaries placed in
 | Component | Version |
 | :--- | :--- |
 | VMware vSphere | 7.0 Update 3D or later, 8.0 or later |
+| VMware vSphere Supervisor | 8.0 or later with VM Service enabled - only for the templates under `references/supervisor-images/` |
+| VCF Automation | 9.0 or later - only for the Cloudbase-Init image preparation and the Active Directory join material |
 
 The service account used by Packer needs a specific set of vSphere privileges.
 They are listed in [docs/getting-started/privileges.md](docs/getting-started/privileges.md),
@@ -176,6 +200,7 @@ before the first build.
 | `artifacts/` | OVF export destination. Contents are generated, not source. |
 | `builds/` | One Packer project per guest operating system, version and edition. |
 | `data/` | Shared templates at the repository root; each build project carries its own `data/` and reads from `${path.root}/data/` (the project directory). |
+| `references/` | Vendor reference material for taking a finished image into VCF Automation 9.0, and for the `vsphere-supervisor` builder. Not part of the build pipeline. See [references/README.md](references/README.md). |
 | `docs/` | Documentation site source (MkDocs Material). |
 | `kubernetes/` | The Helm chart that schedules the builds, and the generated manifest that deploys the web front end. See [kubernetes/README.md](kubernetes/README.md). |
 | `manifests/` | Build manifests written by the manifest post-processor. Generated output. |
@@ -368,6 +393,10 @@ Material (`mkdocs.yml`).
 | [Secrets][d16] | Credential handling |
 | [Web front end][d19] | The build dashboard, deployment and config |
 | [Kubernetes][d21] | The build chart, and how the two layers deploy |
+| [Reference material][d22] | Taking a finished image into VCF Automation 9.0 |
+| [vSphere Supervisor images][d23] | The `vsphere-supervisor` builder, its templates and its ISO import |
+| [Windows VCF Automation image][d24] | The Cloudbase-Init layer a Windows image needs |
+| [Active Directory join][d25] | AD join through Orchestrator, replacing the removed ABX path |
 | [Support][d17] | Community support channels |
 | [Release notes][d18] | Per-release change notes |
 
@@ -430,3 +459,7 @@ downloaded during a build remain under their own licenses, listed there.
 [d19]: docs/operations/web-front-end.md
 [d20]: docs/operations/terraform-role-deploy.md
 [d21]: kubernetes/README.md
+[d22]: docs/references/index.md
+[d23]: docs/references/vsphere-supervisor.md
+[d24]: docs/references/windows-vcf-image.md
+[d25]: docs/references/vcfa-ad-join.md
