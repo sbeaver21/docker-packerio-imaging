@@ -116,9 +116,17 @@ spec:
                   cd "{{ $.Values.runner.workDir }}"
                   export PACKER_PLUGIN_PATH="{{ $.Values.runner.pluginCacheDir }}"
                   export CHECKPOINT_DISABLE=1
-                  cd "${PACKER_PROJECT:?PACKER_PROJECT is not set}"
-                  echo "building $(pwd)"
-                  packer init .
+                  project="${PACKER_PROJECT:?PACKER_PROJECT is not set}"
+                  # Build from the checkout root and name the project, rather
+                  # than cd'ing into it. The Linux projects write their manifest
+                  # to ${path.cwd}/manifests/, and the manifest post-processor
+                  # does not create the directory it writes into - from the
+                  # project directory that path does not exist, so a finished
+                  # image would be reported as a failed build. From here it is
+                  # the checkout's manifests/, which is tracked.
+                  mkdir -p manifests
+                  echo "building ${project}"
+                  packer init "${project}"
                   # The variable files are mounted at a neutral path and passed
                   # explicitly. Mounting the Secret over the project directory
                   # would hide the checked-out *.pkr.hcl files themselves.
@@ -136,7 +144,7 @@ spec:
                   # argv entries, and both come from values.yaml or a Secret
                   # this operator controls, never from user input.
                   # shellcheck disable=SC2086
-                  exec packer build $var_files ${PACKER_BUILD_ARGS:-} .
+                  exec packer build $var_files ${PACKER_BUILD_ARGS:-} "${project}"
               env:
                 # This trio is a contract with web/runs.py (INTERESTING_ENV).
                 # Every one of them is displayed in the UI; none is a secret.

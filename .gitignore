@@ -37,6 +37,11 @@ id_ecdsa*
 # Build manifests are produced by the manifest post-processor on every run.
 manifests/**/*.json
 !manifests/**/.gitkeep
+# The post-processor also leaves a zero-byte lock file beside each manifest it
+# writes (`<timestamp>.json.lock`), and does not remove it on success, so
+# without this rule every build leaves an untracked file in the tree. It is not
+# matched by `manifests/**/*.json` - the name ends in `.lock`, not `.json`.
+manifests/**/*.json.lock
 
 # Exported OVF artifacts and the Packer artifact cache.
 artifacts/**/*

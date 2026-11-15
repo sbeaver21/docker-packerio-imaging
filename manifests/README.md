@@ -5,14 +5,31 @@ Build manifests. **Generated output, not source.**
 ```text
 manifests/
 ├── .gitkeep
-├── linux/
+├── README.md
+├── <timestamp>.json          the Linux projects write here
 └── windows/
-    └── 2026-10-21-18-57-20.json
+    ├── README.md             tracked, so the directory exists in a clone
+    └── <timestamp>.json      the Windows projects write here
 ```
 
-Manifests are written into a subdirectory per guest OS family, named with the
-build timestamp. `.gitignore` excludes `manifests/**/*.json` and keeps the
-directory structure through the `.gitkeep` files.
+Every manifest is named with the build timestamp. `.gitignore` excludes
+`manifests/**/*.json` and keeps the directory structure through the tracked
+files.
+
+The two families reach this directory by different routes, and both routes
+require the directory to already exist:
+
+| Projects | `manifest_path` | Resolves to |
+| :------- | :-------------- | :---------- |
+| Linux | `${path.cwd}/manifests/` | the directory `packer build` was run from |
+| Windows | `${abspath(path.root)}/../../../../manifests/windows/` | this repository's `manifests/windows/` |
+
+The `manifest` post-processor opens its output file directly and does not create
+the parent, so a missing directory fails the post-processor after the image has
+already been imported — and the run is then reported as a build failure. The two
+tracked files above (`manifests/.gitkeep` and `manifests/windows/README.md`) are
+what keep those directories in a fresh clone. See
+[windows/README.md](windows/README.md) for the Windows case in full.
 
 ---
 
